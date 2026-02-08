@@ -96,7 +96,62 @@ def calculate_mfi(data, periods=14):
 def calculate_obv(data):
     obv = (np.sign(data['Close'].diff()) * data['Volume']).fillna(0).cumsum()
     return obv
-
+###add
+# 新增：簡易成交密集區（Volume Profile）計算
+def calculate_volume_profile_dense_areas(data, bins=50, window=100, top_n=3):
+    """
+    計算最近 window 根 K 線的成交量分佈，找出 top_n 個成交最密集的價格區間
+    返回：list of (價格中點, 總成交量, 區間下限, 區間上限)
+    """
+    if len(data) < window:
+        return []
+    
+    recent = data.tail(window).copy()
+    price_min = recent['Low'].min()
+    price_max = recent['High'].max()
+    
+    # 建立價格 bin
+    bin_edges = np.linspace(price_min, price_max, bins + 1)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    
+    # 每個K線的價格範圍分配到 bin
+    volume_profile = np.zeros(bins)
+    
+    for i in range(len(recent)):
+        low = recent['Low'].iloc[i]
+        high = recent['High'].iloc[i]
+        vol = recent['Volume'].iloc[i]
+        
+        # 簡化：均分成交量到 low ~ high 之間的 bin
+        indices = np.digitize([low, high], bin_edges) - 1
+        if indices[0] == indices[1]:
+            # 整個K線在同一 bin
+            if 0 <= indices[0] < bins:
+                volume_profile[indices[0]] += vol
+        else:
+            # 跨多個 bin，均分
+            num_bins = indices[1] - indices[0] + 1
+            if num_bins > 0:
+                vol_per_bin = vol / num_bins
+                for j in range(indices[0], indices[1] + 1):
+                    if 0 <= j < bins:
+                        volume_profile[j] += vol_per_bin
+    
+    # 排序找出 top N
+    top_indices = np.argsort(volume_profile)[-top_n:][::-1]
+    dense_areas = []
+    for idx in top_indices:
+        vol = volume_profile[idx]
+        if vol > 0:
+            dense_areas.append({
+                'price_center': bin_centers[idx],
+                'volume': vol,
+                'price_low': bin_edges[idx],
+                'price_high': bin_edges[idx + 1]
+            })
+    
+    return dense_areas
+    
 # 新增：VIX 获取函数
 def get_vix_data(period, interval):
     vix_ticker = yf.Ticker("^VIX")
@@ -374,6 +429,13 @@ VIX_LOW_THRESHOLD = st.number_input("VIX 平靜閾值 (低)", min_value=10.0, ma
 # 新增：VIX EMA 期數（趨勢信號）
 VIX_EMA_FAST = st.number_input("VIX 快速 EMA 期數", min_value=3, max_value=15, value=5, step=1)
 VIX_EMA_SLOW = st.number_input("VIX 慢速 EMA 期數", min_value=8, max_value=25, value=10, step=1)
+###add
+# 新增：成交密集區（Volume Profile 簡易版）參數
+st.subheader("成交密集區設定")
+VOLUME_PROFILE_BINS = st.number_input("價格分箱數量 (建議 30~100)", min_value=10, max_value=200, value=50, step=5)
+VOLUME_PROFILE_WINDOW = st.number_input("計算密集區的K線根數 (最近)", min_value=20, max_value=500, value=100, step=10)
+VOLUME_PROFILE_TOP_N = st.number_input("顯示前幾大密集區", min_value=1, max_value=5, value=3, step=1)
+VOLUME_PROFILE_SHOW_ON_CHART = st.checkbox("在K線圖上標記成交密集區", value=True)
 
 # 新增：Telegram 觸發條件表格（可編輯）
 st.subheader("📋 Telegram 觸發條件配置（可隨時編輯）")
@@ -860,6 +922,33 @@ while True:
 
                 # 性能优化：使用缓存函数计算K线形态
                 data = compute_kline_patterns(data, BODY_RATIO_THRESHOLD, SHADOW_RATIO_THRESHOLD, DOJI_BODY_THRESHOLD)
+                #add
+                # 新增：計算成交密集區
+                dense_areas = calculate_volume_profile_dense_areas(
+                    data, 
+                    bins=VOLUME_PROFILE_BINS, 
+                    window=VOLUME_PROFILE_WINDOW, 
+                    top_n=VOLUME_PROFILE_TOP_N
+                )
+                
+                # 判斷最新一根K線是否接近密集區（例如距離中心 < 1% 或在區間內）
+                latest_close = data['Close'].iloc[-1]
+                near_dense = False
+                near_dense_info = ""
+                if dense_areas:
+                    for area in dense_areas:
+                        center = area['price_center']
+                        low = area['price_low']
+                        high = area['price_high']
+                        if low <= latest_close <= high:
+                            near_dense = True
+                            near_dense_info = f"目前位於成交密集區內 ({low:.2f} ~ {high:.2f})"
+                            break
+                        dist_pct = abs(latest_close - center) / center * 100
+                        if dist_pct <= 1.0:  # 可調
+                            near_dense = True
+                            near_dense_info = f"接近成交密集區中心 {center:.2f} ({dist_pct:.2f}% 距離)"
+                            break
 
                 # 新增：综合解读（最后 5 根 K 线）（最小改动，添加VWAP/MFI/OBV/VIX提及）
                 def generate_comprehensive_interpretation(data):
@@ -890,6 +979,13 @@ while True:
                         return f"最近五日多空激烈爭奪，看漲與看跌形態交替出現，成交量變化不一，市場方向不明，建議觀望，{vwap_trend}，{mfi_level}，{obv_trend}，{vix_level}，{vix_trend}。"
                     else:
                         return f"最近五日市場型態與成交量無明顯趨勢，建議持續觀察後續動向，{vwap_trend}，{mfi_level}，{obv_trend}，{vix_level}，{vix_trend}。"
+                    #add
+                    dense_desc = ""
+                    if dense_areas:
+                        centers = [a['price_center'] for a in dense_areas]
+                        dense_desc = f"，目前成交密集區集中在 {', '.join([f'{c:.2f}' for c in centers])} 等價位（潛在強支撐/壓力）"
+                    # 在 return 裡面加上 dense_desc
+                    return f"...{dense_desc}。建議持續觀察..."
 
                 comprehensive_interpretation = generate_comprehensive_interpretation(data)
 
@@ -1231,6 +1327,10 @@ while True:
                         alert_msg += "，OBV 突破買入（OBV 新高確認價格上漲量能）"
                     if obv_breakout_sell:
                         alert_msg += "，OBV 突破賣出（OBV 新低確認價格下跌量能）"
+                    #add
+                    # 新增：接近成交密集區提示
+                    if near_dense:
+                        alert_msg += f"，{near_dense_info}（潛在強支撐/壓力）"
                     # 新增：VIX 描述
                     if vix_panic_sell:
                         alert_msg += "，VIX 恐慌賣出（VIX > 30 且上升，市場恐慌加劇）"
@@ -1337,7 +1437,30 @@ while True:
                 # 新增：VWAP 線（主圖）
                 fig.add_trace(go.Scatter(x=data.tail(50)["Datetime"], y=data.tail(50)["VWAP"], 
                                          mode='lines', name='VWAP', line=dict(color='purple', width=2)), row=1, col=1)
-                
+                #add
+                # 新增：畫成交密集區水平區域（半透明矩形）
+                if VOLUME_PROFILE_SHOW_ON_CHART and dense_areas:
+                    for area in dense_areas:
+                        fig.add_hrect(
+                            y0=area['price_low'],
+                            y1=area['price_high'],
+                            x0=data['Datetime'].iloc[-50],  # 從最近50根開始畫
+                            x1=data['Datetime'].iloc[-1],
+                            fillcolor="rgba(255, 165, 0, 0.15)",  # 半透明橙色
+                            line_width=0,
+                            row=1, col=1
+                        )
+                        # 標記中心價格線（較粗）
+                        fig.add_hline(
+                            y=area['price_center'],
+                            line_dash="dot",
+                            line_color="orange",
+                            annotation_text=f"密集區 {area['price_center']:.2f}",
+                            annotation_position="right",
+                            row=1, col=1
+                        )
+
+
                 # 添加成交量柱状图
                 fig.add_bar(x=data.tail(50)["Datetime"], y=data.tail(50)["Volume"], 
                            name="成交量", opacity=0.5, row=2, col=1)
@@ -1594,6 +1717,9 @@ while True:
                                      "Volume Change %", "📈 股價漲跌幅 (%)", 
                                      "📊 成交量變動幅 (%)","Close_Difference", "異動標記",
                                      "成交量標記", "K線形態", "單根解讀", "VWAP", "MFI", "OBV", "VIX", "VIX_EMA_Fast", "VIX_EMA_Slow"]].tail(15)
+                #add
+                if near_dense:
+                    st.info(f"⚠️ {ticker} 目前靠近成交密集區：{near_dense_info}")
                 if not display_data.empty:
                     st.dataframe(
                         display_data,
