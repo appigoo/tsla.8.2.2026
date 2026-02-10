@@ -1421,21 +1421,21 @@ while True:
                                     vertical_spacing=0.1, row_heights=[0.5, 0.2, 0.3])
                 
                 # 添加 K 线图
-                fig.add_trace(go.Candlestick(x=data.tail(50)["Datetime"],
-                                            open=data.tail(50)["Open"],
-                                            high=data.tail(50)["High"],
-                                            low=data.tail(50)["Low"],
-                                            close=data.tail(50)["Close"],
+                fig.add_trace(go.Candlestick(x=data.tail(15)["Datetime"],
+                                            open=data.tail(15)["Open"],
+                                            high=data.tail(15)["High"],
+                                            low=data.tail(15)["Low"],
+                                            close=data.tail(15)["Close"],
                                             name="K線"), row=1, col=1)
                 
                 # 添加 EMA5、EMA10、EMA30 和 EMA40
-                fig.add_trace(px.line(data.tail(50), x="Datetime", y="EMA5")["data"][0], row=1, col=1)
-                fig.add_trace(px.line(data.tail(50), x="Datetime", y="EMA10")["data"][0], row=1, col=1)
-                fig.add_trace(px.line(data.tail(50), x="Datetime", y="EMA30")["data"][0], row=1, col=1)
-                fig.add_trace(px.line(data.tail(50), x="Datetime", y="EMA40")["data"][0], row=1, col=1)
+                fig.add_trace(px.line(data.tail(15), x="Datetime", y="EMA5")["data"][0], row=1, col=1)
+                fig.add_trace(px.line(data.tail(15), x="Datetime", y="EMA10")["data"][0], row=1, col=1)
+                fig.add_trace(px.line(data.tail(15), x="Datetime", y="EMA30")["data"][0], row=1, col=1)
+                fig.add_trace(px.line(data.tail(15), x="Datetime", y="EMA40")["data"][0], row=1, col=1)
                 
                 # 新增：VWAP 線（主圖）
-                fig.add_trace(go.Scatter(x=data.tail(50)["Datetime"], y=data.tail(50)["VWAP"], 
+                fig.add_trace(go.Scatter(x=data.tail(15)["Datetime"], y=data.tail(15)["VWAP"], 
                                          mode='lines', name='VWAP', line=dict(color='purple', width=2)), row=1, col=1)
                 #add
                 # 新增：畫成交密集區水平區域（半透明矩形）
@@ -1462,30 +1462,30 @@ while True:
 
 
                 # 添加成交量柱状图
-                fig.add_bar(x=data.tail(50)["Datetime"], y=data.tail(50)["Volume"], 
+                fig.add_bar(x=data.tail(15)["Datetime"], y=data.tail(15)["Volume"], 
                            name="成交量", opacity=0.5, row=2, col=1)
                 
                 # 新增：OBV 線（成交量子圖，secondary_y）
-                fig.add_trace(go.Scatter(x=data.tail(50)["Datetime"], y=data.tail(50)["OBV"], 
+                fig.add_trace(go.Scatter(x=data.tail(15)["Datetime"], y=data.tail(15)["OBV"], 
                                          mode='lines', name='OBV', yaxis="y2", line=dict(color='orange', width=2)), row=2, col=1)
                 fig.add_hline(y=0, line_dash="dash", line_color="black", row=2, col=1)
                 fig.update_layout(yaxis2=dict(overlaying="y", side="right", title="OBV"))
                 
                 # 添加 RSI 子图
-                fig.add_trace(px.line(data.tail(50), x="Datetime", y="RSI")["data"][0], row=3, col=1)
+                fig.add_trace(px.line(data.tail(15), x="Datetime", y="RSI")["data"][0], row=3, col=1)
                 fig.add_hline(y=70, line_dash="dash", line_color="red", row=3, col=1)  # 超买线
                 fig.add_hline(y=30, line_dash="dash", line_color="green", row=3, col=1)  # 超卖线
                 
                 # 新增：MFI 線（RSI子圖，secondary_y）
-                fig.add_trace(go.Scatter(x=data.tail(50)["Datetime"], y=data.tail(50)["MFI"], 
+                fig.add_trace(go.Scatter(x=data.tail(15)["Datetime"], y=data.tail(15)["MFI"], 
                                          mode='lines', name='MFI', yaxis="y3", line=dict(color='brown', width=2)), row=3, col=1)
                 fig.add_hline(y=80, line_dash="dash", line_color="red", row=3, col=1, yref="y3")  # MFI超买
                 fig.add_hline(y=20, line_dash="dash", line_color="green", row=3, col=1, yref="y3")  # MFI超卖
                 fig.update_layout(yaxis3=dict(overlaying="y", side="right", title="MFI", range=[0,100]))
                 
                 # 标记 EMA 买入/卖出信号、关键转折点、新买入信号、新卖出信号、新转折点及新EMA信号
-                for i in range(1, len(data.tail(50))):
-                    idx = -50 + i  # 调整索引以匹配 tail(50)
+                for i in range(1, len(data.tail(15))):
+                    idx = -50 + i  # 调整索引以匹配 tail(15)
                     if (data["EMA5"].iloc[idx] > data["EMA10"].iloc[idx] and 
                         data["EMA5"].iloc[idx-1] <= data["EMA10"].iloc[idx-1]):
                         fig.add_annotation(x=data["Datetime"].iloc[idx], y=data["Close"].iloc[idx],
