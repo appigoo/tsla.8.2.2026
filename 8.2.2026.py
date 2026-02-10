@@ -1485,7 +1485,7 @@ while True:
                 
                 # 标记 EMA 买入/卖出信号、关键转折点、新买入信号、新卖出信号、新转折点及新EMA信号
                 for i in range(1, len(data.tail(10))):
-                    idx = -50 + i  # 调整索引以匹配 tail(10)
+                    idx = -10 + i  # 调整索引以匹配 tail(10)
                     if (data["EMA5"].iloc[idx] > data["EMA10"].iloc[idx] and 
                         data["EMA5"].iloc[idx-1] <= data["EMA10"].iloc[idx-1]):
                         fig.add_annotation(x=data["Datetime"].iloc[idx], y=data["Close"].iloc[idx],
