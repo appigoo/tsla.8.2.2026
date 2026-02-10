@@ -1451,15 +1451,28 @@ while True:
                             row=1, col=1
                         )
                         # 標記中心價格線（較粗）
-                        fig.add_hline(
-                            y=area['price_center'],
-                            line_dash="dot",
-                            line_color="orange",
-                            annotation_text=f"密集區 {area['price_center']:.2f}",
-                            annotation_position="right",
-                            annotation_font=dict(color="red", size=24),
-                            row=1, col=1
-                        )
+                        for i, area in enumerate(dense_areas):
+                            # 奇數個放左邊，偶數個放右邊
+                            position = "left" if i % 2 == 0 else "right"
+                            
+                            fig.add_hline(
+                                y=area['price_center'],
+                                line_dash="dot",
+                                line_color="red",
+                                annotation_text=f"{area['price_center']:.2f}",
+                                annotation_position=position,
+                                annotation_font=dict(color="red", size=12),
+                                row=1, col=1
+                            )
+                        # fig.add_hline(
+                        #     y=area['price_center'],
+                        #     line_dash="dot",
+                        #     line_color="orange",
+                        #     annotation_text=f"密集區 {area['price_center']:.2f}",
+                        #     annotation_position="right",
+                        #     annotation_font=dict(color="red", size=24),
+                        #     row=1, col=1
+                        # )
 
 
                 # 添加成交量柱状图
