@@ -1457,7 +1457,7 @@ while True:
                             line_color="orange",
                             annotation_text=f"密集區 {area['price_center']:.2f}",
                             annotation_position="right",
-                            annotation_font=dict(color="red", size=12),
+                            annotation_font=dict(color="red", size=24),
                             row=1, col=1
                         )
 
