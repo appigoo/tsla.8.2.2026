@@ -1374,6 +1374,10 @@ while True:
                     if data["Close_N_High"].iloc[-1] >=HIGH_N_HIGH_THRESHOLD:
                             alertmsg = f"有機會再破新高,買入訊號: {data['Datetime'].iloc[-1]} {ticker}:{selected_interval}:$ {data['High'].iloc[-1].round(2)} *{data['異動標記'].iloc[-1]}*{data['成交量標記'].iloc[-1]}*{data['K線形態'].iloc[-1]}*{data['單根解讀'].iloc[-1]}* 匹配排名 {matched_rank} 條件"
                             send_telegram_alert(alertmsg)
+                    #量價
+                    if if abs(data["📈 股價漲跌幅 (%)"]) >= PRICE_THRESHOLD and abs(data["📊 成交量變動幅 (%)"]) >= VOLUME_THRESHOLD:
+                            alertmsg = f"量價齊揚,主力進場或重大消息引發的關鍵突破訊號: {data['Datetime'].iloc[-1]} {ticker}:{selected_interval}:$ {data['Close'].iloc[-1].round(2)} *{data['異動標記'].iloc[-1]}*{data['成交量標記'].iloc[-1]}*{data['K線形態'].iloc[-1]}*{data['單根解讀'].iloc[-1]}* 匹配排名 {matched_rank} 條件"
+                            send_telegram_alert(alertmsg)
                     if data["High"].iloc[-1] >= data['High_Max'].iloc[-1]:
                             alertmsg = f"破5K新高,買入訊號: {data['Datetime'].iloc[-1]} {ticker}:{selected_interval}:$ {data['Close'].iloc[-1].round(2)} *{data['異動標記'].iloc[-1]}*{data['成交量標記'].iloc[-1]}*{data['K線形態'].iloc[-1]}*{data['單根解讀'].iloc[-1]}* 匹配排名 {matched_rank} 條件"
                             send_telegram_alert(alertmsg)
