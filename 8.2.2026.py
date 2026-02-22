@@ -1427,28 +1427,6 @@ while True:
                 fig = make_subplots(rows=3, cols=1, shared_xaxes=True, 
                                     subplot_titles=(f"{ticker} K線與EMA/VWAP", "成交量/OBV", "RSI/MFI"),
                                     vertical_spacing=0.1, row_heights=[0.5, 0.2, 0.3])
-
-                # ─── 在 make_subplots 之後新增 ────────────────────────────────
-                fig.update_xaxes(
-                    rangeslider_visible=True,          # 開啟底部範圍滑桿
-                    rangeselector=dict(                # 快速選擇按鈕
-                        buttons=list([
-                            dict(count=1, label="1d", step="day", stepmode="backward"),
-                            dict(count=5, label="5d", step="day", stepmode="backward"),
-                            dict(count=1, label="1m", step="month", stepmode="backward"),
-                            dict(count=3, label="3m", step="month", stepmode="backward"),
-                            dict(count=6, label="6m", step="month", stepmode="backward"),
-                            dict(step="all", label="全部")
-                        ])
-                    ),
-                    rangebreaks=[                      # 自動斷開週末與非交易日
-                        dict(bounds=["sat", "mon"]),   # 週六到週一斷開
-                        dict(bounds=[16, 9.5], pattern="hour")  # 美股收盤後到開盤（可依市場調整）
-                    ]
-                )
-                
-                # 如果你想讓預設顯示更多資料，可以把 tail(10) 改成 tail(60) 或 tail(120)
-                # 但建議保留 tail(10) 並靠 rangeslider 讓使用者自己拉長
                                 
                 # 添加 K 线图
                 fig.add_trace(go.Candlestick(x=data.tail(10)["Datetime"],
@@ -1457,6 +1435,47 @@ while True:
                                             low=data.tail(10)["Low"],
                                             close=data.tail(10)["Close"],
                                             name="K線"), row=1, col=1)
+
+                # 特別標記最新一根（可選：用不同顏色或加大）
+                fig.add_trace(
+                    go.Candlestick(
+                        x=[data["Datetime"].iloc[-1]],
+                        open=[data["Open"].iloc[-1]],
+                        high=[data["High"].iloc[-1]],
+                        low=[data["Low"].iloc[-1]],
+                        close=[data["Close"].iloc[-1]],
+                        name="最新K線",
+                        increasing_line_color='rgba(0,200,0,0.9)',  # 綠色半透明
+                        decreasing_line_color='rgba(200,0,0,0.9)',
+                        increasing_fillcolor='rgba(0,255,0,0.3)',
+                        decreasing_fillcolor='rgba(255,0,0,0.3)',
+                        line=dict(width=3),  # 加粗邊框
+                        showlegend=False
+                    ),
+                    row=1, col=1
+                )
+                
+                # 改進 hover 資訊（在原 Candlestick trace 加上）
+                fig.update_traces(
+                    hovertemplate=(
+                        "時間: %{x|%Y-%m-%d %H:%M}<br>" +
+                        "開: %{open:.2f}<br>高: %{high:.2f}<br>低: %{low:.2f}<br>收: %{close:.2f}<br>" +
+                        "成交量: %{customdata[0]:,} <br>" +
+                        "RSI: %{customdata[1]:.1f} <br>" +
+                        "MFI: %{customdata[2]:.1f} <br>" +
+                        "VWAP: %{customdata[3]:.2f} <br>" +
+                        "異動: %{customdata[4]} <br>" +
+                        "<extra></extra>"
+                    ),
+                    customdata=np.column_stack((
+                        data["Volume"],
+                        data["RSI"],
+                        data["MFI"],
+                        data["VWAP"],
+                        data["異動標記"].fillna("")
+                    )),
+                    row=1, col=1
+                )
                 
                 # 添加 EMA5、EMA10、EMA30 和 EMA40
                 fig.add_trace(px.line(data.tail(10), x="Datetime", y="EMA5")["data"][0], row=1, col=1)
