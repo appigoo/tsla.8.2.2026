@@ -1435,47 +1435,6 @@ while True:
                                             low=data.tail(10)["Low"],
                                             close=data.tail(10)["Close"],
                                             name="K線"), row=1, col=1)
-
-                # 特別標記最新一根（可選：用不同顏色或加大）
-                fig.add_trace(
-                    go.Candlestick(
-                        x=[data["Datetime"].iloc[-1]],
-                        open=[data["Open"].iloc[-1]],
-                        high=[data["High"].iloc[-1]],
-                        low=[data["Low"].iloc[-1]],
-                        close=[data["Close"].iloc[-1]],
-                        name="最新K線",
-                        increasing_line_color='rgba(0,200,0,0.9)',  # 綠色半透明
-                        decreasing_line_color='rgba(200,0,0,0.9)',
-                        increasing_fillcolor='rgba(0,255,0,0.3)',
-                        decreasing_fillcolor='rgba(255,0,0,0.3)',
-                        line=dict(width=3),  # 加粗邊框
-                        showlegend=False
-                    ),
-                    row=1, col=1
-                )
-                
-                # 改進 hover 資訊（在原 Candlestick trace 加上）
-                fig.update_traces(
-                    hovertemplate=(
-                        "時間: %{x|%Y-%m-%d %H:%M}<br>" +
-                        "開: %{open:.2f}<br>高: %{high:.2f}<br>低: %{low:.2f}<br>收: %{close:.2f}<br>" +
-                        "成交量: %{customdata[0]:,} <br>" +
-                        "RSI: %{customdata[1]:.1f} <br>" +
-                        "MFI: %{customdata[2]:.1f} <br>" +
-                        "VWAP: %{customdata[3]:.2f} <br>" +
-                        "異動: %{customdata[4]} <br>" +
-                        "<extra></extra>"
-                    ),
-                    customdata=np.column_stack((
-                        data["Volume"],
-                        data["RSI"],
-                        data["MFI"],
-                        data["VWAP"],
-                        data["異動標記"].fillna("")
-                    )),
-                    row=1, col=1
-                )
                 
                 # 添加 EMA5、EMA10、EMA30 和 EMA40
                 fig.add_trace(px.line(data.tail(10), x="Datetime", y="EMA5")["data"][0], row=1, col=1)
