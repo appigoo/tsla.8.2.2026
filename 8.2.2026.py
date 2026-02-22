@@ -1383,11 +1383,6 @@ while True:
                     if data["Low"].iloc[-1] <= data['Low_Min'].iloc[-1]:
                             alertmsg = f"穿5K新低,賣出訊號: {data['Datetime'].iloc[-1]} {ticker}:{selected_interval}:$ {data['Close'].iloc[-1].round(2)} *{data['異動標記'].iloc[-1]}*{data['成交量標記'].iloc[-1]}*{data['K線形態'].iloc[-1]}*{data['單根解讀'].iloc[-1]}* 匹配排名 {matched_rank} 條件"
                             send_telegram_alert(alertmsg)
-                    
-                    if abs(data["📈 股價漲跌幅 (%)"]) >= PRICE_THRESHOLD and abs(data["📊 成交量變動幅 (%)"]) >= VOLUME_THRESHOLD:
-                        
-                        alertmsg = f"量價齊揚,主力進場或重大消息引發的關鍵突破訊號: {data['Datetime'].iloc[-1]} {ticker}:{selected_interval}:$ {data['Close'].iloc[-1].round(2)} *{data['異動標記'].iloc[-1]}*{data['成交量標記'].iloc[-1]}*{data['K線形態'].iloc[-1]}*{data['單根解讀'].iloc[-1]}* 匹配排名 {matched_rank} 條件"
-                        send_telegram_alert(alertmsg)
                         
                     if len(data["異動標記"]) > 0:
                         K_signals = str(data["異動標記"].iloc[-1])  # 最新一根K线的信号字符串
@@ -1420,6 +1415,9 @@ while True:
                         
                         if matched_rank is not None:
                             alertmsg = f"1D BUY 趨勢反轉,買入訊號: {data['Datetime'].iloc[-1]} {ticker}:{selected_interval}:$ {data['Close'].iloc[-1].round(2)} *{data['異動標記'].iloc[-1]}*{data['成交量標記'].iloc[-1]}*{data['K線形態'].iloc[-1]}*{data['單根解讀'].iloc[-1]}* 匹配排名 {matched_rank} 條件"
+                            send_telegram_alert(alertmsg)
+                        if abs(data["📈 股價漲跌幅 (%)"]) >= PRICE_THRESHOLD and abs(data["📊 成交量變動幅 (%)"]) >= VOLUME_THRESHOLD:
+                            alertmsg = f"量價齊揚,主力進場或重大消息引發的關鍵突破訊號: {data['Datetime'].iloc[-1]} {ticker}:{selected_interval}:$ {data['Close'].iloc[-1].round(2)} *{data['異動標記'].iloc[-1]}*{data['成交量標記'].iloc[-1]}*{data['K線形態'].iloc[-1]}*{data['單根解讀'].iloc[-1]}* 匹配排名 {matched_rank} 條件"
                             send_telegram_alert(alertmsg)
                     ##########
                 # 添加 K 线图（含 EMA）、成交量柱状图和 RSI 子图（新增 VWAP/MFI/OBV traces）
